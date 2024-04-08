@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 
-import { Image as RayImage, Icon, List, Action, ActionPanel } from "@raycast/api";
-import { ExtensionMeta, SearchFilter } from "@/model/npmResponse.model";
+import { Image as RayImage, Icon, List, Action, ActionPanel, Color } from "@raycast/api";
+import { SearchFilter } from "@/model/npmResponse.model";
 import { usePromise } from "@raycast/utils";
 import { fullSearch } from "chrome-extension-meta";
+import { title } from 'process';
+import { Result } from '@/types';
 const rateFilters: Array<SearchFilter> = [
   {
     index: 0,
@@ -29,17 +31,23 @@ const rateFilters: Array<SearchFilter> = [
 // 获取状态颜色
 function getStatusColor(rating: string) {
   const rate = parseFloat(rating);
+  if (isNaN(rate)) {
+    return Color.Orange
+  }
   if (rate < 3) {
-    return "#FF0000";
+    return Color.Red
   } else if (rate < 4) {
-    return "#FFA500";
+    return Color.Yellow
   } else {
-    return "#32CD32";
+    return Color.Green
   }
 }
 // rating 保留一位小数
 function toFixed(num: string, fractionDigits = 1) {
   const numFloat = parseFloat(num);
+  if (isNaN(numFloat)) {
+    return "No Rated";
+  }
   return numFloat.toFixed(fractionDigits);
 }
 function getChromeExtensionUrl(id: string) {
@@ -49,12 +57,28 @@ function getChromeExtensionUrl(id: string) {
 function getStatusAccessoryext(ext: ExtensionMeta) {
   const accessory: List.Item.Accessory = {
     icon: {
-      source: Icon.Star,
+      source: Icon.CircleFilled,
       tintColor: getStatusColor(ext.rating),
     },
     tooltip: `Rating: ${toFixed(ext.rating)}`,
   };
   return accessory;
+}
+
+
+
+function getFullUrl(url: string) {
+  try {
+    const urlObj = new URL("https://" + url);
+
+    return urlObj.href;
+  } catch (e) {
+    return url;
+  }
+}
+
+function isNullString(str: string | null): str is null {
+  return str === 'null' || str === null;
 }
 
 export default function MDNSearchResultsList() {
@@ -66,31 +90,38 @@ export default function MDNSearchResultsList() {
   //ts-ignore
   const { isLoading, data, pagination } = usePromise(
     (searchText: string) => async (options: { page: number }) => {
-      console.log("options", options);
+      // console.log("options", options);
 
-      const page = options.page;
-      const page_ = page + 1;
-      const response = await fullSearch(searchText, {
-        limit: page_ * 13,
-      });
-      const allData = response.data as unknown as ExtensionMeta[];
-      console.log('allData', allData)
-      const yesData = allData.filter((item) => !!item.iconURL && !!item.title && !!item.description && !!item.id);
-      const newData = yesData.filter((item) => !loadedData.some((ld) => ld.id === item.id)); // 过滤掉已加载的数据
-      if (newData.length === 0) {
+      const { page } = options;
+      const pageSize = 13;
+      const offset = page * pageSize;
+      const response = await fullSearch(searchText, { limit: offset + pageSize });
+      const allData = response.data;
+      console.log('allData', allData);
+
+      // 筛选有效数据，并且去除已加载的数据
+      const filteredData = allData
+        .filter(item => item.iconURL && item.title && item.description && item.id)
+        .filter(item => !loadedData.some(ld => ld.id === item.id));
+
+      console.log("filteredData", filteredData.length);
+
+      if (filteredData.length === 0) {
         return { data: [], hasMore: false };
       }
-      console.log("newData", newData.length);
-      const combinedData = [...loadedData, ...newData];
-      setTimeout(() => setLoadedData(combinedData), 1000); // 模拟加载延迟
 
-      return { data: newData, hasMore: true };
+      // 更新已加载数据
+      const updatedLoadedData = [...loadedData, ...filteredData];
+      setTimeout(() => setLoadedData(updatedLoadedData), 1000); // 模拟加载延迟
+
+      return { data: filteredData, hasMore: true };
     },
     [query],
   );
-  useEffect(() => {
-    console.log("pagination", pagination);
-  }, [pagination]);
+
+  // useEffect(() => {
+  //   console.log("pagination", pagination);
+  // }, [pagination]);
 
   useEffect(() => {
     setLoadedData([]);
@@ -101,7 +132,9 @@ export default function MDNSearchResultsList() {
       searchBarPlaceholder="Type to search MDN..."
       onSearchTextChange={(text) => setQuery(text)}
       pagination={pagination}
+      selectedItemId={data?.[0]?.id.toString()}
       throttle
+      isShowingDetail
       searchBarAccessory={
         <List.Dropdown
           tooltip="Select Locale"
@@ -126,8 +159,68 @@ export default function MDNSearchResultsList() {
           key={idx}
           title={result.title.toString()}
           icon={{ source: result.iconURL ?? Icon.MinusCircle, mask: RayImage.Mask.RoundedRectangle }}
-          subtitle={result.description}
+          // subtitle={result.description??""}
           accessories={[getStatusAccessoryext(result)]}
+          detail={
+            <List.Item.Detail
+              //  coverURL
+              markdown={
+                `![cover](${result.coverURL}?raycast-width=260&raycast-height=166)` 
+              }
+              metadata={
+                <List.Item.Detail.Metadata>
+                  <List.Item.Detail.Metadata.Link title="Title"
+                    text={result.title} target={getChromeExtensionUrl(getChromeExtensionUrl(result.id))} />
+
+                  {
+                    result.publish && !isNullString(result.publish) && (
+                      <>
+                        <List.Item.Detail.Metadata.Separator />
+
+                        <List.Item.Detail.Metadata.Link title="Author"
+                          text={result.publish} target={getFullUrl(result.publish)} />
+                      </>
+                    )
+                  }
+
+
+                  <List.Item.Detail.Metadata.Separator />
+                  <List.Item.Detail.Metadata.Label
+                    title={`Description`}
+                    text={result.description}
+                  />
+                  <List.Item.Detail.Metadata.Separator />
+
+                  <List.Item.Detail.Metadata.Label
+                    icon={Icon.Star}
+                    title={`Rating`}
+                    text={toFixed(result.rating)}
+                  />
+                  <List.Item.Detail.Metadata.Separator />
+                  <List.Item.Detail.Metadata.Label
+                    title={`Review Count`}
+                    text={ isNullString(result.reviewCount) ? "0" : result.reviewCount }
+                  />
+                  <List.Item.Detail.Metadata.Separator />
+                  <List.Item.Detail.Metadata.Label
+                    title={`Active User`}
+                    text={result.userCount ?? "0"}
+                  />
+
+                  <List.Item.Detail.Metadata.Separator />
+                  <List.Item.Detail.Metadata.TagList title="Tag" >
+                    {
+                      result.category && result.category.split('/').map((item) => (
+                        <List.Item.Detail.Metadata.TagList.Item text={item} />
+                      ))
+                    }
+                  </List.Item.Detail.Metadata.TagList>
+                </List.Item.Detail.Metadata>
+              }
+            >
+
+            </List.Item.Detail>
+          }
           actions={
             <ActionPanel title={result.title}>
               <ActionPanel.Section>

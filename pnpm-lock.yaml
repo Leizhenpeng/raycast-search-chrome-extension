@@ -12,8 +12,8 @@ dependencies:
     specifier: ^1.13.6
     version: 1.13.6(@raycast/api@1.70.3)
   chrome-extension-meta:
-    specifier: ^0.0.5
-    version: 0.0.5
+    specifier: ^0.0.8
+    version: 0.0.8
   dedupe:
     specifier: ^4.0.3
     version: 4.0.3
@@ -507,8 +507,8 @@ packages:
       supports-color: 7.2.0
     dev: true
 
-  /chrome-extension-meta@0.0.5:
-    resolution: {integrity: sha512-tpOjwQEnr/NWWnJf36coGdSnz59/oj2bY8+9Nc5+7BHnro2XiHp6w92uukbX46iBvaSPx3LbAA/F9jYOjz7QJg==}
+  /chrome-extension-meta@0.0.8:
+    resolution: {integrity: sha512-ABdhE6C6V/dGYUHjAnac5mcMvwgLK8g6HmxrQr3HcCYuN3mpPvn1axwLuAHbam7P6x0HeHPQV0eChr04Gl+G1w==}
     dependencies:
       node-fetch: 2.7.0
     transitivePeerDependencies:

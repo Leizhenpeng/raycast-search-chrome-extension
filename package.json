@@ -22,7 +22,7 @@
   "dependencies": {
     "@raycast/api": "^1.70.2",
     "@raycast/utils": "^1.13.6",
-    "chrome-extension-meta": "^0.0.5",
+    "chrome-extension-meta": "^0.0.8",
     "dedupe": "^4.0.3",
     "node-fetch": "^3.3.2",
     "url-join": "^5.0.0"
