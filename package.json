@@ -3,7 +3,7 @@
   "name": "search-chrome-extension",
   "title": "Search Chrome Extension",
   "description": "Search for chrome extension information",
-  "icon": "command-icon.png",
+  "icon": "icon.png",
   "author": "leizhenpeng",
   "owner": "Motions",
   "categories": [
@@ -13,13 +13,19 @@
   "commands": [
     {
       "name": "index",
-      "title": "Show List and Detail",
-      "description": "Template for showing a static list and a detail view",
+      "title": "Search Extension",
+      "subtitle": "Chrome Web Store",
+      "description": "Search for Chrome extensions on the Chrome Web Store",
       "mode": "view"
     }
   ],
   "dependencies": {
-    "@raycast/api": "^1.70.2"
+    "@raycast/api": "^1.70.2",
+    "@raycast/utils": "^1.13.6",
+    "chrome-extension-meta": "^0.0.5",
+    "dedupe": "^4.0.3",
+    "node-fetch": "^3.3.2",
+    "url-join": "^5.0.0"
   },
   "devDependencies": {
     "@raycast/eslint-config": "^1.0.6",
