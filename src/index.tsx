@@ -165,7 +165,7 @@ export default function MDNSearchResultsList() {
             <List.Item.Detail
               //  coverURL
               markdown={
-                `![cover](${result.coverURL}?raycast-width=260&raycast-height=166)` 
+                `![cover](${result.coverURL})` 
               }
               metadata={
                 <List.Item.Detail.Metadata>
